@@ -1,0 +1,49 @@
+package com.example.hosptal.security;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.Customizer;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.provisioning.InMemoryUserDetailsManager;
+import org.springframework.security.web.SecurityFilterChain;
+
+@Configuration
+@EnableWebSecurity
+public class SecurityConfig {
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+    @Bean
+    public InMemoryUserDetailsManager inMemoryUserDetailsManager(){
+        String pwd = passwordEncoder.encode("1234");
+        System.out.printf("this is the password : %s",pwd);
+        InMemoryUserDetailsManager inMemoryUserDetailsManager = new InMemoryUserDetailsManager(
+                User.withUsername("user1").password(pwd).roles("USER").build(),
+                User.withUsername("user2").password(pwd).roles("USER").build(),
+                User.withUsername("admin").password(pwd).roles("USER","ADMIN").build()
+        );
+        return inMemoryUserDetailsManager;
+    }
+
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception{
+//        httpSecurity.formLogin();
+//        httpSecurity.authorizeHttpRequests().anyRequest().authenticated();
+
+//        httpSecurity.authorizeHttpRequests().requestMatchers("/delete").hasRole("ADMIN");
+//        httpSecurity.exceptionHandling().accessDeniedPage("/notAuthrized");
+        httpSecurity
+                .authorizeRequests(authorize -> authorize
+                        .requestMatchers("/delete").hasRole("ADMIN")
+                        .anyRequest().authenticated()
+                )
+                .formLogin(Customizer.withDefaults())
+                .exceptionHandling(configure -> configure.accessDeniedPage("/notAuthorized"));
+
+        return httpSecurity.build();
+    }
+}
